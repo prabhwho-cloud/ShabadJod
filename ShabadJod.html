@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ਸ਼ਬਦ ਬਣਾਓ – Punjabi Word Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gurmukhi:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff8ec;--card:#fff;--ink:#2b2118;--muted:#7a6a58;--accent:#e07a00;--accent2:#1c6fb5;--ok:#2e9e4f;--bad:#d64545;--line:#f0d9b5;--tile:#ffe8bd}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1812;--card:#262017;--ink:#f6ead6;--muted:#b9a88f;--accent:#ffa733;--accent2:#6db6f2;--line:#4a3d28;--tile:#4a3a1c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans Gurmukhi","Raavi","Gurmukhi MN",system-ui,sans-serif;display:flex;justify-content:center;padding:14px}
+.wrap{width:100%;max-width:620px}
+h1{font-size:1.5rem;margin:4px 0 2px;text-align:center;color:var(--accent)}
+.sub{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:10px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px}
+details summary{cursor:pointer;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{border:2px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;user-select:none;font-size:.95rem;background:var(--card);color:var(--ink)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip b{font-size:1.2rem}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+button.btn{font:inherit;border:0;border-radius:12px;padding:9px 14px;cursor:pointer;background:var(--accent2);color:#fff;font-weight:700}
+button.btn.alt{background:var(--line);color:var(--ink)}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0}
+.bar i{display:block;height:100%;background:var(--ok);width:0;transition:width .3s}
+.info{display:flex;justify-content:space-between;font-size:.9rem;color:var(--muted)}
+.pic{font-size:6.5rem;text-align:center;line-height:1.2;margin:4px 0}
+.slots,.bank{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.slot,.tile{min-width:64px;height:72px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:2.4rem;padding:0 8px}
+.slot{border:3px dashed var(--line);cursor:pointer}
+.slot.f{border-style:solid;border-color:var(--accent2);background:var(--tile)}
+.tile{background:var(--tile);border:3px solid var(--accent);cursor:pointer;color:var(--ink);font-family:inherit;box-shadow:0 3px 0 var(--accent)}
+.tile:active{transform:translateY(2px);box-shadow:none}
+.tile.gone{visibility:hidden}
+.msg{text-align:center;min-height:2rem;font-size:1.3rem;font-weight:700}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+.good .slot{border-color:var(--ok);background:rgba(46,158,79,.2)}
+.shake{animation:sh .4s}
+@keyframes sh{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.center{text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ਸ਼ਬਦ ਬਣਾਓ</h1>
+  <div class="sub">Look at the picture and put the letters in the right order</div>
+
+  <div class="card">
+    <details>
+      <summary>⚙️ ਮਾਤਰਾਵਾਂ ਚੁਣੋ (Choose matras)</summary>
+      <div class="sub" style="text-align:left;margin:8px 0 0">A word appears only if all its matras are ticked. ਬਿੰਦੀ words always come with another matra, so ticking ਬਿੰਦੀ shows them all.</div>
+      <div class="chips" id="chips"></div>
+      <div class="row"><button class="btn" id="apply">ਸ਼ੁਰੂ ਕਰੋ / Start</button></div>
+    </details>
+  </div>
+
+  <div class="card" id="game">
+    <div class="info"><span id="lvl"></span><span id="score"></span></div>
+    <div class="bar"><i id="prog"></i></div>
+    <div class="pic" id="pic"></div>
+    <div class="slots" id="slots"></div>
+    <div class="msg" id="msg"></div>
+    <div class="bank" id="bank"></div>
+    <div class="row" style="justify-content:center">
+      <button class="btn alt" id="hint">💡 ਸੰਕੇਤ</button>
+      <button class="btn alt" id="reset">↺ ਦੁਬਾਰਾ</button>
+      <button class="btn alt" id="skip">⏭ ਛੱਡੋ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== WORD LIST =====  format:  emoji  letter|letter|letter   (each | separates one tile)
+   To add words, just add a line. Matras are detected automatically. */
+const RAW = `
+🏠 ਘ|ਰ
+💧 ਜ|ਲ
+🍎 ਫ|ਲ
+🚰 ਨ|ਲ
+🚌 ਬ|ਸ
+✏️ ਕ|ਲ|ਮ
+🪷 ਕ|ਮ|ਲ
+🥄 ਚ|ਮ|ਚ
+🏙️ ਨ|ਗ|ਰ
+🍽️ ਬ|ਰ|ਤ|ਨ
+🥭 ਅੰ|ਬ
+🚗 ਕਾ|ਰ
+⭐ ਤਾ|ਰਾ
+📿 ਮਾ|ਲਾ
+🔒 ਤਾ|ਲਾ
+🧼 ਸਾ|ਬ|ਣ
+⛰️ ਪ|ਹਾ|ੜ
+🏰 ਕਿ|ਲਾ
+❤️ ਦਿ|ਲ
+🌶️ ਮਿ|ਰ|ਚ
+📖 ਕਿ|ਤਾ|ਬ
+🎬 ਫਿ|ਲ|ਮ
+🎸 ਗਿ|ਟਾ|ਰ
+🏹 ਤੀ|ਰ
+🌱 ਬੀ|ਜ
+🐆 ਚੀ|ਤਾ
+⏰ ਘ|ੜੀ
+🐘 ਹਾ|ਥੀ
+🐜 ਕੀ|ੜੀ
+🌉 ਪੁ|ਲ
+🌹 ਗੁ|ਲਾ|ਬ
+🐓 ਮੁ|ਰ|ਗਾ
+🪑 ਕੁ|ਰ|ਸੀ
+⚽ ਫੁ|ਟ|ਬਾ|ਲ
+🐪 ਊ|ਠ
+👢 ਬੂ|ਟ
+🐭 ਚੂ|ਹਾ
+☀️ ਸੂ|ਰ|ਜ
+🕊️ ਕ|ਬੂ|ਤ|ਰ
+🍎 ਸੇ|ਬ
+🌾 ਖੇ|ਤ
+🎂 ਕੇ|ਕ
+🍌 ਕੇ|ਲਾ
+🎪 ਮੇ|ਲਾ
+⛵ ਬੇ|ੜੀ
+🖊️ ਪੈ|ਨ
+🎒 ਬੈ|ਗ
+🦶 ਪੈ|ਰ
+🍒 ਚੈ|ਰੀ
+📷 ਕੈ|ਮ|ਰਾ
+🦚 ਮੋ|ਰ
+🥁 ਢੋ|ਲ
+🦜 ਤੋ|ਤਾ
+🫓 ਰੋ|ਟੀ
+🐴 ਘੋ|ੜਾ
+🍼 ਬੋ|ਤ|ਲ
+🍚 ਚੌ|ਲ
+🥣 ਕੌ|ਲੀ
+🪜 ਪੌ|ੜੀ
+🌱 ਪੌ|ਦਾ
+🦢 ਹੰ|ਸ
+🛏️ ਮੰ|ਜਾ
+🚩 ਝੰ|ਡਾ
+🐦 ਪੰ|ਛੀ
+🍊 ਸੰ|ਤ|ਰਾ
+✂️ ਕੈਂ|ਚੀ
+🐒 ਬਾਂ|ਦ|ਰ
+☝️ ਉਂ|ਗ|ਲ
+🐍 ਸੱ|ਪ
+🐕 ਕੁੱ|ਤਾ
+👶 ਬੱ|ਚਾ
+🌸 ਫੁੱ|ਲ
+🐱 ਬਿੱ|ਲੀ
+🐟 ਮੱ|ਛੀ
+🪰 ਮੱ|ਖੀ
+🚙 ਗੱ|ਡੀ
+✉️ ਚਿੱ|ਠੀ
+🦆 ਬੱ|ਤ|ਖ
+☁️ ਬੱ|ਦ|ਲ
+🐂 ਬ|ਲ|ਦ
+🏋️ ਕ|ਸ|ਰ|ਤ
+🏯 ਮ|ਹ|ਲ
+🪶 ਪ|ਰ
+🥕 ਗਾ|ਜ|ਰ
+🥬 ਸਾ|ਗ
+🏞️ ਪਾ|ਰ|ਕ
+🍽️ ਖਾ|ਣਾ
+🪴 ਗ|ਮ|ਲਾ
+🚪 ਕ|ਮ|ਰਾ
+🔴 ਲਾ|ਲ
+🍛 ਥਾ|ਲ
+👤 ਸਿ|ਰ
+🌞 ਦਿ|ਨ
+🦌 ਹਿ|ਰ|ਨ
+📯 ਬਿ|ਗ|ਲ
+🧾 ਬਿ|ਲ
+🌤️ ਕਿ|ਰ|ਨ
+🎫 ਟਿ|ਕ|ਟ
+🛏️ ਬਿ|ਸ|ਤ|ਰ
+🎵 ਗੀ|ਤ
+👅 ਜੀ|ਭ
+💺 ਸੀ|ਟ
+🥝 ਕੀ|ਵੀ
+📺 ਟੀ|ਵੀ
+🎞️ ਰੀ|ਲ
+🍬 ਚੀ|ਨੀ
+📣 ਸੀ|ਟੀ
+🗼 ਬੁ|ਰ|ਜ
+🌼 ਗੁ|ਲ
+🐦 ਬੁ|ਲ|ਬੁ|ਲ
+👑 ਮੁ|ਕ|ਟ
+🎶 ਧੁ|ਨ
+📚 ਪੁ|ਸ|ਤ|ਕ
+🍯 ਗੁ|ੜ
+🐓 ਕੁ|ਕ|ੜ
+🎼 ਸੁ|ਰ
+🍲 ਸੂ|ਪ
+👻 ਭੂ|ਤ
+🐖 ਸੂ|ਰ
+🌴 ਖ|ਜੂ|ਰ
+🧂 ਲੂ|ਣ
+🧵 ਸੂ|ਤ
+🌬️ ਕੂ|ਲ|ਰ
+🛢️ ਤੇ|ਲ
+🌿 ਵੇ|ਲ
+🥘 ਦੇ|ਗ
+🚆 ਰੇ|ਲ
+🦱 ਕੇ|ਸ
+🎲 ਖੇ|ਲ
+🫃 ਪੇ|ਟ
+🌅 ਸ|ਵੇ|ਰ
+🍽️ ਟੇ|ਬ|ਲ
+🚶 ਸੈ|ਰ
+⛓️ ਕੈ|ਦ
+🪭 ਪੱ|ਖਾ
+🔥 ਗੈ|ਸ
+🍓 ਜੈ|ਮ
+🎩 ਹੈ|ਟ
+🧢 ਟੋ|ਪੀ
+🏏 ਬੈ|ਟ
+🏟️ ਮੈ|ਚ
+🔬 ਲੈ|ਬ
+🦹 ਚੋ|ਰ
+🕯️ ਮੋ|ਮ
+⚪ ਗੋ|ਲ
+🧥 ਕੋ|ਟ
+🏨 ਹੋ|ਟ|ਲ
+📮 ਪੋ|ਸ|ਟ
+🛵 ਮੋ|ਟ|ਰ
+🤡 ਜੋ|ਕ|ਰ
+🛣️ ਚੌ|ਕ
+❓ ਕੌ|ਣ
+💨 ਪੌ|ਣ
+🌦️ ਮੌ|ਸ|ਮ
+🏃 ਦੌ|ੜ
+🎉 ਮੌ|ਜ
+👩 ਔ|ਰ|ਤ
+😴 ਸੌ|ਣ
+🧑‍💼 ਨੌ|ਕ|ਰ
+🪖 ਫੌ|ਜ
+🥚 ਆਂ|ਡਾ
+💪 ਬਾਂ|ਹ
+🐼 ਪਾਂ|ਡਾ
+⛺ ਟੈਂ|ਟ
+🛋️ ਬੈਂ|ਚ
+🍴 ਕਾਂ|ਟਾ
+🩴 ਸੈਂ|ਡ|ਲ
+🦏 ਗੈਂ|ਡਾ
+5️⃣ ਪੰ|ਜ
+🎨 ਰੰ|ਗ
+🧱 ਕੰ|ਧ
+🌙 ਚੰ|ਦ
+🪶 ਖੰ|ਭ
+🪢 ਗੰ|ਢ
+🛠️ ਕੰ|ਮ
+🚫 ਬੰ|ਦ
+🦷 ਦੰ|ਦ
+✋ ਹੱ|ਥ
+👁️ ਅੱ|ਖ
+☕ ਕੱ|ਪ
+🪨 ਪੱ|ਥ|ਰ
+🐃 ਮੱ|ਝ
+🦴 ਹੱ|ਡ
+🏘️ ਛੱ|ਤ`;
+
+/* ===== MATRAS (order = difficulty order) ===== */
+const MATRAS = [
+ {m:'ਾ',n:'ਕੰਨਾ',s:'ਕਾ',x:['ਆ']},
+ {m:'ਿ',n:'ਸਿਹਾਰੀ',s:'ਕਿ',x:['ਇ']},
+ {m:'ੀ',n:'ਬਿਹਾਰੀ',s:'ਕੀ',x:['ਈ']},
+ {m:'ੁ',n:'ਔਂਕੜ',s:'ਕੁ',x:['ਉ']},
+ {m:'ੂ',n:'ਦੁਲੈਂਕੜ',s:'ਕੂ',x:['ਊ']},
+ {m:'ੇ',n:'ਲਾਂਵ',s:'ਕੇ',x:['ਏ']},
+ {m:'ੈ',n:'ਦੁਲਾਵਾਂ',s:'ਕੈ',x:['ਐ']},
+ {m:'ੋ',n:'ਹੋੜਾ',s:'ਕੋ',x:['ਓ']},
+ {m:'ੌ',n:'ਕਨੌੜਾ',s:'ਕੌ',x:['ਔ']},
+ {m:'ਂ',n:'ਬਿੰਦੀ',s:'ਕਂ',x:[]},
+ {m:'ੰ',n:'ਟਿੱਪੀ',s:'ਕੰ',x:[]},
+ {m:'ੱ',n:'ਅੱਧਕ',s:'ਕੱ',x:[]}
+];
+
+const WORDS = RAW.trim().split('\n').map(l=>{
+  const i=l.indexOf(' ');const pic=l.slice(0,i).trim();const units=l.slice(i+1).trim().split('|');
+  const word=units.join('');const set=new Set();
+  MATRAS.forEach((t,k)=>{ if(word.includes(t.m)||t.x.some(c=>word.includes(c))) set.add(k); });
+  return {pic,units,word,set,hard:set.size?Math.max(...set):-1};
+});
+
+/* ===== STATE ===== */
+const $=id=>document.getElementById(id);
+let selected=new Set(['mukta']), pool=[], idx=0, score=0, tiles=[], placed=[], locked=false, cur=null;
+const PER_LEVEL=5;
+
+function buildChips(){
+  const c=$('chips');c.innerHTML='';
+  const mk=(key,label)=>{
+    const d=document.createElement('div');d.className='chip'+(selected.has(key)?' on':'');d.innerHTML=label;
+    d.onclick=()=>{if(key==='all'){selected=new Set(['all']);}else{selected.delete('all');selected.has(key)?selected.delete(key):selected.add(key);if(!selected.size)selected.add('mukta');}buildChips();};
+    c.appendChild(d);
+  };
+  mk('all','<b>ਸਾਰੀਆਂ ਮਾਤਰਾਵਾਂ</b> (all words, mixed)');
+  mk('mukta','<b>ਮੁਕਤਾ</b> (no matra)');
+  MATRAS.forEach((t,k)=>mk(k,`<b>${t.s}</b> ${t.n}`));
+}
+function shuffle(a){const r=a.slice();for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];}return r;}
+
+function startGame(){
+  pool=WORDS.filter(w=>selected.has('all')||(w.set.size===0?selected.has('mukta'):w.set.has(9)?selected.has(9):[...w.set].every(k=>selected.has(k))));
+  // easiest first: fewer tiles, then simpler matra; shuffle first so ties vary
+  // difficulty score + random jitter: words get harder overall, but the order differs every play
+  const score_=w=>w.units.length*3+(w.hard+1)*0.5+Math.random()*4;
+  pool=pool.map(w=>({w,d:score_(w)})).sort((a,b)=>a.d-b.d).map(o=>o.w);
+  idx=0;score=0;
+  if(!pool.length){$('pic').textContent='🙁';$('slots').innerHTML='';$('bank').innerHTML='';$('msg').textContent='No words for this selection yet. Try adding more matras.';return;}
+  load();
+}
+function load(){
+  if(idx>=pool.length){finish();return;}
+  cur=pool[idx];locked=false;
+  let order;let tries=0;
+  do{order=shuffle(cur.units.map((t,i)=>({id:i,t})));tries++;}
+  while(cur.units.length>1&&tries<20&&order.map(o=>o.t).join('')===cur.word);
+  tiles=order;placed=cur.units.map(()=>null);
+  $('pic').textContent=cur.pic;$('msg').textContent='';$('msg').className='msg';
+  $('slots').parentElement.classList.remove('good');
+  $('lvl').textContent='ਪੱਧਰ '+(Math.floor(idx/PER_LEVEL)+1)+' · '+(idx+1)+'/'+pool.length;
+  $('score').textContent='⭐ '+score;
+  $('prog').style.width=(idx/pool.length*100)+'%';
+  render();
+}
+function render(){
+  const s=$('slots');s.innerHTML='';
+  placed.forEach((p,i)=>{
+    const d=document.createElement('div');d.className='slot'+(p!==null?' f':'');
+    d.textContent=p!==null?tiles.find(t=>t.id===p).t:'';
+    d.onclick=()=>{if(locked||p===null)return;placed[i]=null;render();};
+    s.appendChild(d);
+  });
+  const b=$('bank');b.innerHTML='';
+  tiles.forEach(t=>{
+    const used=placed.includes(t.id);
+    const d=document.createElement('button');d.className='tile'+(used?' gone':'');d.textContent=t.t;
+    d.onclick=()=>{if(locked||used)return;const e=placed.indexOf(null);if(e<0)return;placed[e]=t.id;render();check();};
+    b.appendChild(d);
+  });
+}
+function check(){
+  if(placed.includes(null))return;
+  const w=placed.map(p=>tiles.find(t=>t.id===p).t).join('');
+  const m=$('msg');
+  if(w===cur.word){
+    locked=true;score+=10;$('score').textContent='⭐ '+score;
+    m.textContent='🎉 ਸ਼ਾਬਾਸ਼! '+cur.word;m.className='msg ok';
+    $('slots').parentElement.classList.add('good');
+    setTimeout(()=>{idx++;load();},1500);
+  }else{
+    m.textContent='ਫਿਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ 🙂';m.className='msg bad';
+    $('slots').classList.add('shake');locked=true;
+    setTimeout(()=>{$('slots').classList.remove('shake');placed=placed.map(()=>null);locked=false;m.textContent='';render();},900);
+  }
+}
+function hint(){
+  if(locked)return;
+  let i=0;while(i<cur.units.length&&placed[i]!==null&&tiles.find(t=>t.id===placed[i]).t===cur.units[i])i++;
+  if(i>=cur.units.length)return;
+  for(let j=i;j<placed.length;j++)placed[j]=null;
+  const t=tiles.find(t=>t.t===cur.units[i]&&!placed.includes(t.id));
+  placed[i]=t.id;score=Math.max(0,score-2);$('score').textContent='⭐ '+score;render();check();
+}
+function finish(){
+  $('prog').style.width='100%';$('pic').textContent='🏆';$('slots').innerHTML='';$('bank').innerHTML='';
+  $('lvl').textContent='';$('msg').className='msg ok';
+  $('msg').innerHTML='ਵਧਾਈਆਂ! ਤੁਹਾਡੇ ਅੰਕ: '+score+'<br><button class="btn" onclick="startGame()">ਫਿਰ ਖੇਡੋ</button>';
+}
+$('apply').onclick=()=>{startGame();$('game').scrollIntoView({behavior:'smooth'});};
+$('hint').onclick=hint;
+$('reset').onclick=()=>{if(!locked&&cur){placed=placed.map(()=>null);render();}};
+$('skip').onclick=()=>{if(cur){idx++;load();}};
+buildChips();startGame();
+</script>
+</body>
+</html>
