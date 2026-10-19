@@ -1,6 +1,8 @@
 # ShabadJod
 Shabad Jod  (Word builder) game for young curious minds to start making their first Punjabi words
 
+Link - https://prabhwho-cloud.github.io/ShabadJod/ShabadJod.html
+
 ਸ਼ਬਦ ਬਣਾਓ – Punjabi Word Builder
 
 A simple, free web game that helps young students learn to spell Punjabi (Gurmukhi) words. The student looks at a picture, then taps the jumbled letters to put the word together in the right order.
